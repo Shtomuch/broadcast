@@ -1,10 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'users/base.html' %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}Мої зустрічі{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'meetings/css/meetings.css' %}">
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h2>Мої зустрічі</h2>
+    <a href="{% url 'meetings:create' %}" class="btn">Нова зустріч</a>
+    <ul>
+      {% for m in meetings %}
+        <li class="meeting-item">
+          <a href="{{ m.get_absolute_url }}">{{ m.title }}</a>
+          — {{ m.scheduled_time }} ({{ m.duration }} хв.)
+        </li>
+      {% empty %}
+        <li>Немає запланованих зустрічей.</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}

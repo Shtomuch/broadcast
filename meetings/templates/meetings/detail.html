@@ -1,10 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'users/base.html' %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}Деталі зустрічі{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'meetings/css/meetings.css' %}">
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h2>{{ meeting.title }}</h2>
+    <p><strong>Організатор:</strong> {{ meeting.host.username }}</p>
+    <p><strong>Заплановано:</strong> {{ meeting.scheduled_time }}</p>
+    <p><strong>Тривалість:</strong> {{ meeting.duration }} хв.</p>
+    <p><strong>Опис:</strong> {{ meeting.description|default:"—" }}</p>
+    <p><strong>Учасники:</strong>
+      {% for u in meeting.participants.all %}
+        {{ u.get_full_name }}{% if not forloop.last %}, {% endif %}
+      {% empty %}—{% endfor %}
+    </p>
+    <p>
+      <a href="{% url 'meetings:join' slug=meeting.room_name %}" class="btn">
+        Приєднатися
+      </a>
+    </p>
+    {% if meeting.recording_enabled %}
+      <p><em>Запис буде збережено та доступний після завершення.</em></p>
+    {% endif %}
+  </div>
+{% endblock %}

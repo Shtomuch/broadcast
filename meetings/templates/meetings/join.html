@@ -1,10 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'users/base.html' %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}Приєднатися до {{ meeting.title }}{% endblock %}
+
+{% block extra_js %}
+  <script src="https://{{ JITSI_DOMAIN }}/external_api.js"></script>
+  <script src="{% static 'meetings/js/jitsi_init.js' %}"></script>
+  <script>
+    window.JITSI_DOMAIN = '{{ JITSI_DOMAIN }}';
+    document.addEventListener('DOMContentLoaded', function(){
+      initJitsiMeet(
+        '{{ meeting.room_name }}',
+        '#jitsi-container',
+        {
+          interfaceConfigOverwrite: {
+            TOOLBAR_BUTTONS: [
+              'microphone', 'camera', 'desktop', 'hangup',
+              'chat', 'tileview', 'recording'
+            ]
+          },
+          userInfo: { displayName: '{{ user.get_full_name }}' }
+        }
+      );
+    });
+  </script>
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h2>{{ meeting.title }}</h2>
+    <p><strong>Заплановано на:</strong> {{ meeting.scheduled_time }}</p>
+    <div id="jitsi-container" style="height:600px;"></div>
+  </div>
+{% endblock %}
