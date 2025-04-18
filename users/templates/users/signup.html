@@ -1,12 +1,12 @@
 {% extends 'users/base.html' %}
-{% block title %}Вхід{% endblock %}
+{% block title %}Реєстрація{% endblock %}
 
 {% block content %}
-  <h2>Вхід</h2>
+  <h2>Реєстрація</h2>
   <form method="post" class="form-container" novalidate>
     {% csrf_token %}
     {{ form.non_field_errors }}
     {{ form.as_p }}
-    <button type="submit" class="btn">Увійти</button>
+    <button type="submit" class="btn">Зареєструватися</button>
   </form>
 {% endblock %}

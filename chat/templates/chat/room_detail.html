@@ -1,10 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'users/base.html' %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}Чат: {{ room.name }}{% endblock %}
+
+{% block extra_js %}
+  <script>
+    const roomSlug = "{{ room.slug }}";
+    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const wsPath = wsScheme + "://" + window.location.host + "/ws/chat/" + roomSlug + "/";
+    // Для fetch CSRF
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let cookie of cookies) {
+              cookie = cookie.trim();
+              if (cookie.startsWith(name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+    }
+  </script>
+  <script src="{% static 'chat/js/chat.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+  <h2>Чат: {{ room.name }}</h2>
+  <div id="chat-log" style="height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 0.5rem;"></div>
+
+  <form id="chat-form" style="margin-top:1rem;">
+    <input id="file-input" type="file" style="margin-bottom:0.5rem;" />
+    <br/>
+    <input id="chat-input" autocomplete="off" placeholder="Напишіть повідомлення…" style="width:75%;" />
+    <button type="submit">Відправити</button>
+  </form>
+{% endblock %}

@@ -1,10 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'users/base.html' %}
+{% block title %}Профіль{% endblock %}
 
-</body>
-</html>
+{% block content %}
+  <h2>Профіль користувача</h2>
+  <div class="profile-container">
+    <p><strong>Користувач:</strong> {{ user.username }}</p>
+    <p><strong>Ім'я:</strong> {{ user.first_name }}</p>
+    <p><strong>Прізвище:</strong> {{ user.last_name }}</p>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+    <p><strong>Відділ:</strong> {{ user.department|default:"–" }}</p>
+  </div>
+{% endblock %}
