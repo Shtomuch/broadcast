@@ -1,3 +1,4 @@
+{# users/templates/users/base.html #}
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -10,11 +11,13 @@
 <body>
   <header>
     <nav>
+      <a href="{% url 'home' %}">Головна</a> |
       <a href="{% url 'meetings:list' %}">Зустрічі</a> |
       <a href="{% url 'chat:rooms' %}">Чат</a> |
       {% if user.is_authenticated %}
         <a href="{% url 'users:profile' %}">{{ user.username }}</a> |
-        <a href="{% url 'logout' %}">Вихід</a>
+        {# БУЛО: 'logout' — невірне імʼя #}
+        <a href="{% url 'users:logout' %}">Вихід</a>
       {% else %}
         <a href="{% url 'users:login' %}">Увійти</a> |
         <a href="{% url 'users:signup' %}">Реєстрація</a>

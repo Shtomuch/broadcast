@@ -3,22 +3,96 @@
 
 {% block title %}Мої зустрічі{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'meetings/css/meetings.css' %}">
+  <link rel="stylesheet" href="{% static 'meetings/css/meetings.css' %}">
 {% endblock %}
 
 {% block content %}
-  <div class="container">
-    <h2>Мої зустрічі</h2>
-    <a href="{% url 'meetings:create' %}" class="btn">Нова зустріч</a>
-    <ul>
-      {% for m in meetings %}
-        <li class="meeting-item">
-          <a href="{{ m.get_absolute_url }}">{{ m.title }}</a>
-          — {{ m.scheduled_time }} ({{ m.duration }} хв.)
-        </li>
-      {% empty %}
-        <li>Немає запланованих зустрічей.</li>
-      {% endfor %}
-    </ul>
+<div class="container">
+  <h2>Мої зустрічі</h2>
+
+  <!-- 1) Ручний ввід slug для приєднання -->
+  <div style="margin-bottom:1rem;">
+    <h3>Приєднатися за кодом зустрічі</h3>
+    <input
+      id="join-code-input"
+      type="text"
+      placeholder="Введіть тільки slug (наприклад: abcd1234)"
+      style="padding:.5rem; width:250px;"
+    />
+    <button id="join-code-btn" class="btn btn-sm" style="margin-left:.5rem;">
+      Приєднатися
+    </button>
   </div>
+
+  <!-- 2) Створити нову зустріч -->
+  <a href="{% url 'meetings:create' %}" class="btn">Нова зустріч</a>
+
+  <!-- 3) Ваші заплановані зустрічі -->
+  <ul style="margin-top:1rem;">
+    {% for m in meetings %}
+      {# отримуємо абсолютний join‑URL #}
+      {% url 'meetings:join' slug=m.room_name as join_path %}
+      {% with full_join_url=request.scheme|add:"://"|add:request.get_host|add:join_path %}
+      <li style="margin-bottom:.5rem;">
+        <strong>{{ m.title }}</strong> —
+        {{ m.scheduled_time }} ({{ m.duration }} хв.)
+        <a href="{% url 'meetings:detail' slug=m.room_name %}"
+           class="btn btn-sm">Деталі</a>
+
+        <button class="copy-link btn btn-sm"
+                data-url="{{ full_join_url }}">
+          Копіювати лінк
+        </button>
+      </li>
+      {% endwith %}
+    {% empty %}
+      <li>Немає запланованих зустрічей.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // --- А) Копіювання лінку ---
+    document.querySelectorAll('.copy-link').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const url = btn.getAttribute('data-url');
+        navigator.clipboard.writeText(url)
+          .then(() => alert('Лінк скопійовано:\n' + url))
+          .catch(() => alert('Не вдалося скопіювати лінк'));
+      });
+    });
+
+    // --- Б) Приєднання за кодом (slug) ---
+    const codeInput = document.getElementById('join-code-input');
+    const codeBtn   = document.getElementById('join-code-btn');
+
+    codeBtn.addEventListener('click', () => {
+      let raw = codeInput.value.trim();
+      if (!raw) {
+        return alert('Будь ласка, введіть код зустрічі (slug).');
+      }
+
+      // Якщо користувач вставив повний URL — спробуємо витягти slug:
+      try {
+        const u = new URL(raw);
+        // очікуємо шлях виду /meetings/<slug>/join/
+        const parts = u.pathname.split('/').filter(p => p);
+        // parts = ['meetings', '<slug>', 'join']
+        if (parts[0] === 'meetings' && parts[2] === 'join') {
+          raw = parts[1];
+        }
+      } catch (err) {
+        // якщо не URL — нічого не робимо
+      }
+
+      // Тепер raw точно має бути slug
+      const slug = raw;
+      // Перенаправляємо на правильний шлях:
+      window.location.href = `${window.location.origin}/meetings/${slug}/join/`;
+    });
+  });
+</script>
 {% endblock %}

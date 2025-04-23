@@ -1,0 +1,17 @@
+{# файл: <project_root>/templates/home.html #}
+{% extends 'users/base.html' %}
+{% block title %}Ласкаво просимо — CorpComm{% endblock %}
+
+{% block content %}
+  <section style="text-align:center; padding:2rem;">
+    <h1>Ласкаво просимо до CorpComm</h1>
+    <p>Проводьте онлайн‑зустрічі, спілкуйтесь у чатах та обмінюйтеся файлами.</p>
+
+    {% if user.is_authenticated %}
+      <a class="btn" href="{% url 'meetings:list' %}">Мої зустрічі</a>
+    {% else %}
+      <a class="btn" href="{% url 'users:login' %}">Увійти</a>
+      <a class="btn" href="{% url 'users:signup' %}">Реєстрація</a>
+    {% endif %}
+  </section>
+{% endblock %}

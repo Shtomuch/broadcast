@@ -25,7 +25,27 @@ SECRET_KEY = 'django-insecure-xvq***!bskbq*2m_!nu4*0=hs5i=i2#q99^oj2&146)@ss-v2u
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# settings.py
+
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '3265-85-114-193-172.ngrok-free.app',  # Django‑тунель (порт 8000)
+    'f553-85-114-193-172.ngrok-free.app',  # Jitsi‑тунель (порт 8443)
+]
+
+# Домомін для Jitsi API (без схеми й порту — ngrok автоматично портує 443→8443)
+JITSI_DOMAIN = os.getenv(
+    'JITSI_DOMAIN',
+    'f553-85-114-193-172.ngrok-free.app'
+)
+
+# Дозволяємо CSRF для обох https‑доменів
+CSRF_TRUSTED_ORIGINS = [
+    'https://3265-85-114-193-172.ngrok-free.app',
+    'https://f553-85-114-193-172.ngrok-free.app',
+]
+
 
 AUTH_USER_MODEL = 'users.User'
 # Application definition
@@ -58,7 +78,7 @@ ROOT_URLCONF = 'broadcast.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [ BASE_DIR / 'broadcast' / 'templates' ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -125,4 +145,23 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-JITSI_DOMAIN = os.getenv('JITSI_DOMAIN', 'meet.jit.si')
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Медіа (для uploads, attachments, записів)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+ASGI_APPLICATION = 'broadcast.asgi.application'
+REDIS_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379')
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': { 'hosts': [REDIS_URL] },
+    },
+}
+X_FRAME_OPTIONS = 'ALLOWALL'
+from django.urls import reverse_lazy
+
+LOGIN_REDIRECT_URL = reverse_lazy('meetings:list')
+LOGOUT_REDIRECT_URL = reverse_lazy('users:login')
+LOGIN_URL = reverse_lazy('users:login')

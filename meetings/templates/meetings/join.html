@@ -4,19 +4,31 @@
 {% block title %}Приєднатися до {{ meeting.title }}{% endblock %}
 
 {% block extra_js %}
-  <script src="https://{{ JITSI_DOMAIN }}/external_api.js"></script>
-  <script src="{% static 'meetings/js/jitsi_init.js' %}"></script>
   <script>
+    // домен разом із портом
     window.JITSI_DOMAIN = '{{ JITSI_DOMAIN }}';
-    document.addEventListener('DOMContentLoaded', function(){
+  </script>
+
+  <!-- 1) тягнемо скрипт по HTTP -->
+  <script src="http://{{ JITSI_DOMAIN }}/external_api.js"></script>
+  <!-- 2) ваш власний init -->
+  <script src="{% static 'meetings/js/jitsi_init.js' %}"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
       initJitsiMeet(
         '{{ meeting.room_name }}',
         '#jitsi-container',
         {
+          configOverwrite: {
+            prejoinPageEnabled: false,
+            enableWelcomePage: false,
+            lobbyEnabled: false,
+          },
           interfaceConfigOverwrite: {
             TOOLBAR_BUTTONS: [
-              'microphone', 'camera', 'desktop', 'hangup',
-              'chat', 'tileview', 'recording'
+              'microphone','camera','desktop','hangup',
+              'chat','tileview','recording'
             ]
           },
           userInfo: { displayName: '{{ user.get_full_name }}' }
