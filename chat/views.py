@@ -1,83 +1,108 @@
-from django.utils import timezone
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseNotAllowed, JsonResponse
-from django.views.generic import ListView, DetailView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from rest_framework.generics import get_object_or_404
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.views import redirect_to_login
+from django.db import models
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
+from django.views.generic import (
+    ListView, CreateView, TemplateView, View, DeleteView, FormView
+)
+from django.http import HttpResponseForbidden
 
-from .models import ChatRoom, Message
-
+from .forms import ChatRoomForm, PasswordForm
+from .models import ChatRoom
 
 class RoomListView(LoginRequiredMixin, ListView):
     model = ChatRoom
-    template_name = "chat/room.html"
+    template_name = "chat/rooms_list.html"
     context_object_name = "rooms"
 
     def get_queryset(self):
-        qs = super().get_queryset().filter(
-            is_private=False
-        ) | self.request.user.chatrooms.all()
-        return qs.distinct()
+        u = self.request.user
+        public_qs  = ChatRoom.objects.filter(is_private=False)
+        private_qs = ChatRoom.objects.filter(
+            is_private=True
+        ).filter(models.Q(participants=u) | models.Q(host=u))
 
+        return (public_qs | private_qs).distinct().order_by("name")
 
-class RoomDetailView(LoginRequiredMixin, DetailView):
+class RoomCreateView(LoginRequiredMixin, CreateView):
     model = ChatRoom
+    form_class = ChatRoomForm            # ← було fields = [...]
+    template_name = "chat/room_create.html"
+    success_url = reverse_lazy("chat:rooms")
+
+
+    def form_valid(self, form):
+        form.instance.host = self.request.user
+        response = super().form_valid(form)
+        if form.instance.is_private:
+            form.instance.participants.add(self.request.user)
+        return response
+
+class RoomJoinView(TemplateView):
     template_name = "chat/room_detail.html"
-    context_object_name = "room"
 
-    def get_queryset(self):
-        # доступ в приватні кімнати тільки учасникам
-        qs = super().get_queryset()
-        if not self.request.user.is_superuser:
-            qs = qs.filter(
-                is_private=False
-            ) | qs.filter(participants=self.request.user)
-        return qs.distinct()
+    def dispatch(self, request, *args, **kwargs):
+        self.room = get_object_or_404(ChatRoom, slug=kwargs["slug"])
+        user = request.user
 
-@login_required
-def upload_attachment(request, slug):
-    if request.method != 'POST':
-        return HttpResponseNotAllowed(['POST'])
+        # 1) приватна — спочатку питаємо пароль
+        if self.room.is_private:
+            if not request.session.get(f"room_pass_{self.room.pk}"):
+                return redirect("chat:pwd_prompt", slug=self.room.slug)
 
-    room = get_object_or_404(ChatRoom, slug=slug)
-    # доступ до приватних кімнат
-    if room.is_private and request.user not in room.participants.all():
-        return JsonResponse({'error': 'Forbidden'}, status=403)
+        # 2) додаємо в participants, якщо залогінений
+        if user.is_authenticated and not self.room.participants.filter(pk=user.pk).exists():
+            self.room.participants.add(user)
 
-    upload = request.FILES.get('file')
-    if not upload:
-        return JsonResponse({'error': 'No file uploaded'}, status=400)
+        return super().dispatch(request, *args, **kwargs)
 
-    # створюємо запис в БД з attachment
-    message = Message.objects.create(
-        room=room,
-        user=request.user,
-        content='',             # тексту немає
-        attachment=upload
-    )
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["room"] = self.room
+        return ctx
 
-    # готуємо подію для WebSocket‑групи
-    timestamp = timezone.localtime(message.timestamp).strftime("%H:%M")
-    event = {
-        'type': 'chat_message',      # обробляє ChatConsumer.chat_message
-        'message': '',               # без тексту
-        'username': request.user.username,
-        'timestamp': timestamp,
-        'attachment_url': message.attachment.url,
-    }
+class LeaveRoomView(LoginRequiredMixin, View):
+    def post(self, request, slug):
+        room = get_object_or_404(ChatRoom, slug=slug)
+        room.participants.remove(request.user)
+        return redirect("chat:rooms")
 
-    # відсилаємо всім учасникам кімнати через channel layer
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        f"chat_{slug}",
-        event
-    )
 
-    # повертаємо JSON з URL і метаданими
-    return JsonResponse({
-        'attachment_url': message.attachment.url,
-        'username': request.user.username,
-        'timestamp': timestamp,
-    })
+class RoomPasswordView(LoginRequiredMixin, FormView):
+    template_name = "chat/room_password.html"
+    form_class    = PasswordForm
+
+    def dispatch(self, request, *args, **kwargs):
+        # Отримуємо кімнату, щоб перевіряти пароль і додавати в participants
+        self.room = get_object_or_404(ChatRoom, slug=kwargs["slug"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        # Перевіряємо пароль
+        raw = form.cleaned_data["password"]
+        if self.room.check_password(raw):
+            # Запам’ятовуємо в сесії, щоб не питати знову
+            self.request.session[f"room_pass_{self.room.pk}"] = True
+            # Додаємо користувача до списку учасників
+            self.room.participants.add(self.request.user)
+            # Переходимо до самої кімнати
+            return redirect("chat:join", slug=self.room.slug)
+
+        # Якщо невірний — повертаємо форму з помилкою
+        form.add_error("password", "Невірний пароль")
+        return self.form_invalid(form)
+
+    def get_context_data(self, **kwargs):
+        return {
+            **super().get_context_data(**kwargs),
+            "room": self.room,
+        }
+class RoomDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+        model = ChatRoom
+        template_name = "chat/room_confirm_delete.html"
+        success_url = reverse_lazy("chat:rooms")
+
+        def test_func(self):
+            # тільки власник (host) може видаляти
+            return self.get_object().host == self.request.user

@@ -56,20 +56,17 @@ class MeetingDetailView(LoginRequiredMixin, DetailView):
         return get_object_or_404(Meeting, room_name=self.kwargs['slug'])
 
 
-class MeetingJoinView(LoginRequiredMixin, TemplateView):
-    """
-    Сторінка join. Якщо заходить не‑хост і не в participants — автоматично додаємо.
-    """
+class MeetingJoinView(TemplateView):
+    """Доступний абсолютно всім за URL (без LoginRequiredMixin)."""
     template_name = 'meetings/join.html'
 
     def dispatch(self, request, *args, **kwargs):
         meeting = get_object_or_404(Meeting, room_name=kwargs['slug'])
-
-        # якщо не хост і ще не учасник — додаємо
-        if request.user != meeting.host and not meeting.participants.filter(pk=request.user.pk).exists():
+        # якщо користувач залогінений – додаємо в participants
+        if request.user.is_authenticated and request.user != meeting.host \
+           and not meeting.participants.filter(pk=request.user.pk).exists():
             meeting.participants.add(request.user)
-
-        # тепер уже гарантовано — хост або учасник
+        # public access ok → продовжуємо
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):

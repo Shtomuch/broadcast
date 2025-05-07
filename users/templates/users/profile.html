@@ -1,13 +1,35 @@
 {% extends 'users/base.html' %}
 {% block title %}Профіль{% endblock %}
 
+{# ── Відкриваємо контент‑блок ──────────────────────────────── #}
 {% block content %}
-  <h2>Профіль користувача</h2>
-  <div class="profile-container">
-    <p><strong>Користувач:</strong> {{ user.username }}</p>
-    <p><strong>Ім'я:</strong> {{ user.first_name }}</p>
-    <p><strong>Прізвище:</strong> {{ user.last_name }}</p>
-    <p><strong>Email:</strong> {{ user.email }}</p>
-    <p><strong>Відділ:</strong> {{ user.department|default:"–" }}</p>
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-info text-white">
+          <h2 class="h5 mb-0">Профіль користувача</h2>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Користувач</dt>
+            <dd class="col-sm-8">{{ user.username }}</dd>
+
+            <dt class="col-sm-4">Імʼя</dt>
+            <dd class="col-sm-8">{{ user.first_name|default:"—" }}</dd>
+
+            <dt class="col-sm-4">Прізвище</dt>
+            <dd class="col-sm-8">{{ user.last_name|default:"—" }}</dd>
+
+            <dt class="col-sm-4">Email</dt>
+            <dd class="col-sm-8">{{ user.email }}</dd>
+
+            <dt class="col-sm-4">Відділ</dt>
+            <dd class="col-sm-8">{{ user.department|default:"—" }}</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
   </div>
+</div>
 {% endblock %}

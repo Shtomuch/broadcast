@@ -2,11 +2,25 @@
 {% block title %}Вхід{% endblock %}
 
 {% block content %}
-  <h2>Вхід</h2>
-  <form method="post" class="form-container" novalidate>
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-    {{ form.as_p }}
-    <button type="submit" class="btn">Увійти</button>
-  </form>
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-sm-10 col-md-6 col-lg-5">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white">
+          <h2 class="h5 mb-0">Вхід до системи</h2>
+        </div>
+        <div class="card-body">
+          <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary w-100 mt-2">
+              <i class="bi bi-box-arrow-in-right"></i> Увійти
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

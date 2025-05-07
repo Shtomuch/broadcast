@@ -1,48 +1,40 @@
-import uuid
 from django.conf import settings
+from django.contrib.auth.hashers import make_password, check_password
 from django.db import models
-from django.urls import reverse
+from django.utils.text import slugify
+from uuid import uuid4
 
 User = settings.AUTH_USER_MODEL
 
 class ChatRoom(models.Model):
-    """
-    Кімната чату — може бути загальною (public) або приватною між учасниками.
-    """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField("Назва", max_length=150)
-    slug = models.SlugField("Слаг", max_length=150, unique=True)
-    is_private = models.BooleanField("Приватний", default=False)
-    participants = models.ManyToManyField(User, related_name="chatrooms", blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    name        = models.CharField(max_length=100)
+    slug        = models.SlugField(unique=True, editable=False)
+    host        = models.ForeignKey(User, on_delete=models.CASCADE, related_name="owned_rooms")
+    participants = models.ManyToManyField(User, related_name="chat_rooms", blank=True)
+    is_private = models.BooleanField(default=False)
+    password_hash = models.CharField(max_length=128, blank=True)  # ← нове поле
 
-    class Meta:
-        ordering = ("-created_at",)
-        verbose_name = "Кімната"
-        verbose_name_plural = "Кімнати"
+    def set_password(self, raw):
+        self.password_hash = make_password(raw)
+
+    def check_password(self, raw):
+        return check_password(raw, self.password_hash)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(f"{self.name}-{uuid4().hex[:6]}")
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self):
-        return reverse("chat:room_detail", kwargs={"slug": self.slug})
-
 
 class Message(models.Model):
-    """
-    Повідомлення у чаті. Може містити текст або файл.
-    """
-    room = models.ForeignKey(ChatRoom, related_name="messages", on_delete=models.CASCADE)
-    user = models.ForeignKey(User, related_name="messages", on_delete=models.CASCADE)
-    content = models.TextField("Текст повідомлення", blank=True)
-    attachment = models.FileField("Файл", upload_to="chat_files/", blank=True, null=True)
-    timestamp = models.DateTimeField("Час відправки", auto_now_add=True)
+    room      = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name="messages")
+    author    = models.ForeignKey(User, on_delete=models.CASCADE)
+    content   = models.TextField(blank=True)
+    file      = models.FileField(upload_to="chat_files/", blank=True, null=True)
+    created   = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ("timestamp",)
-        verbose_name = "Повідомлення"
-        verbose_name_plural = "Повідомлення"
-
-    def __str__(self):
-        snippet = self.content[:20] or (self.attachment.name if self.attachment else "")
-        return f"{self.user}: {snippet}"
+        ordering = ["created"]

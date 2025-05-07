@@ -1,0 +1,20 @@
+{% extends 'users/base.html' %}
+{% block title %}Видалити кімнату{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="alert alert-danger shadow-sm">
+        <h4 class="alert-heading">Видалити «{{ object.name }}»?</h4>
+        <p class="mb-3">Усі повідомлення буде втрачено безповоротно.</p>
+        <form method="post">
+          {% csrf_token %}
+          <a href="{% url 'chat:rooms' %}" class="btn btn-secondary">Скасувати</a>
+          <button class="btn btn-danger">Так, видалити</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

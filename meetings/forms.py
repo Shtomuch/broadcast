@@ -9,12 +9,6 @@ class MeetingForm(forms.ModelForm):
         label="Заплановано на",
         widget=forms.DateTimeInput(attrs={'type': 'datetime-local'})
     )
-    participants = forms.ModelMultipleChoiceField(
-        queryset=User.objects.all(),
-        required=False,
-        widget=forms.CheckboxSelectMultiple,
-        label="Запрошені учасники"
-    )
 
     class Meta:
         model = Meeting
@@ -23,7 +17,6 @@ class MeetingForm(forms.ModelForm):
             'description',
             'scheduled_time',
             'duration',
-            'participants',
             'recording_enabled',
         ]
         widgets = {

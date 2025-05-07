@@ -1,10 +1,17 @@
 from django.urls import path
-from .views import RoomListView, RoomDetailView, upload_attachment
+from .views import RoomListView, RoomCreateView, RoomJoinView, LeaveRoomView, RoomPasswordView, RoomDeleteView
 
 app_name = "chat"
 
+
+
 urlpatterns = [
     path("rooms/", RoomListView.as_view(), name="rooms"),
-    path("rooms/<slug:slug>/", RoomDetailView.as_view(), name="room_detail"),
-    path("rooms/<slug:slug>/upload/", upload_attachment, name="upload_attachment"),
+    path("rooms/new/", RoomCreateView.as_view(), name="create"),
+    path("r/<slug:slug>/", RoomJoinView.as_view(), name="join"),
+    path("r/<slug:slug>/leave/", LeaveRoomView.as_view(), name="leave"),
+    path("r/<slug:slug>/pwd/", RoomPasswordView.as_view(), name="pwd_prompt"),
+    path("rooms/new/", RoomCreateView.as_view(), name="create"),
+    path("r/<slug:slug>/delete/", RoomDeleteView.as_view(), name="delete"),
+
 ]

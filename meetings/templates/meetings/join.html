@@ -3,45 +3,72 @@
 
 {% block title %}Приєднатися до {{ meeting.title }}{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* 1) Повністю прибираємо відступи й флекс із body */
+  html, body {
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  body.d-flex.flex-column.min-vh-100 {
+    display: block !important;
+  }
+
+  /* 2) Розтягуємо контейнер і всі його прямі діти + pre-join екран */
+  #jitsi-container,
+  #jitsi-container > * ,
+  .prejoin-screen,
+  .welcome-page-content,
+  .lobby-page-container {
+    height: 100% !important;
+    width: 100% !important;
+    margin: 0;
+    padding: 0;
+  }
+</style>
+{% endblock %}
+
 {% block extra_js %}
   <script>
-    // домен разом із портом
-    window.JITSI_DOMAIN = '{{ JITSI_DOMAIN }}';
+    const JITSI_DOMAIN = '{{ JITSI_DOMAIN }}';
   </script>
 
-  <!-- 1) тягнемо скрипт по HTTP -->
-  <script src="http://{{ JITSI_DOMAIN }}/external_api.js"></script>
-  <!-- 2) ваш власний init -->
-  <script src="{% static 'meetings/js/jitsi_init.js' %}"></script>
-
+  <script src="https://{{ JITSI_DOMAIN }}/external_api.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      initJitsiMeet(
-        '{{ meeting.room_name }}',
-        '#jitsi-container',
-        {
-          configOverwrite: {
-            prejoinPageEnabled: false,
-            enableWelcomePage: false,
-            lobbyEnabled: false,
-          },
-          interfaceConfigOverwrite: {
-            TOOLBAR_BUTTONS: [
-              'microphone','camera','desktop','hangup',
-              'chat','tileview','recording'
-            ]
-          },
-          userInfo: { displayName: '{{ user.get_full_name }}' }
+      // 3) Видаляємо Bootstrap-класи, щоб не лізли флекси та мін. висота
+      document.body.classList.remove('d-flex', 'flex-column', 'min-vh-100');
+
+      // 4) Порожній body → наш контейнер
+      document.body.innerHTML = '<div id="jitsi-container"></div>';
+
+      const options = {
+        roomName: '{{ meeting.room_name }}',
+        parentNode: document.getElementById('jitsi-container'),
+        width: '100%',
+        height: '100%',
+        configOverwrite: {
+          prejoinPageEnabled: true,    // можете вимкнути, якщо не потрібен
+          enableWelcomePage: false,
+          lobbyEnabled: false
+        },
+        interfaceConfigOverwrite: {
+          TOOLBAR_BUTTONS: [
+            'microphone','camera','desktop','hangup',
+            'chat','tileview','recording'
+          ]
         }
-      );
+      };
+
+      const api = new JitsiMeetExternalAPI(JITSI_DOMAIN, options);
+
+      // 5) При виході — переходимо на головну
+      const goHome = () => window.location.href = '{% url "meetings:list" %}';
+      api.addEventListener('videoConferenceLeft', goHome);
+      api.addEventListener('readyToClose', goHome);
     });
   </script>
 {% endblock %}
 
-{% block content %}
-  <div class="container">
-    <h2>{{ meeting.title }}</h2>
-    <p><strong>Заплановано на:</strong> {{ meeting.scheduled_time }}</p>
-    <div id="jitsi-container" style="height:600px;"></div>
-  </div>
-{% endblock %}
+{% block content %}{% endblock %}

@@ -30,22 +30,25 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '3265-85-114-193-172.ngrok-free.app',  # Django‑тунель (порт 8000)
-    'f553-85-114-193-172.ngrok-free.app',  # Jitsi‑тунель (порт 8443)
+    "*",
+    'test.shtoma.top',
 ]
 
 # Домомін для Jitsi API (без схеми й порту — ngrok автоматично портує 443→8443)
 JITSI_DOMAIN = os.getenv(
     'JITSI_DOMAIN',
-    'f553-85-114-193-172.ngrok-free.app'
+    'meet.shtoma.top'
 )
 
 # Дозволяємо CSRF для обох https‑доменів
 CSRF_TRUSTED_ORIGINS = [
-    'https://3265-85-114-193-172.ngrok-free.app',
-    'https://f553-85-114-193-172.ngrok-free.app',
+    'https://test.shtoma.top',
 ]
 
+# production safety
+SECURE_SSL_REDIRECT = False              # Django всегда редиректит на https
+SESSION_COOKIE_SECURE = True                # куки только по https
+CSRF_COOKIE_SECURE    = True
 
 AUTH_USER_MODEL = 'users.User'
 # Application definition
@@ -146,7 +149,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-
+INSTALLED_APPS += ["widget_tweaks"]
 # Медіа (для uploads, attachments, записів)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -155,8 +158,10 @@ ASGI_APPLICATION = 'broadcast.asgi.application'
 REDIS_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379')
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': { 'hosts': [REDIS_URL] },
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        # "CONFIG": {
+        #     "hosts": [("127.0.0.1", 6379)],
+        # },
     },
 }
 X_FRAME_OPTIONS = 'ALLOWALL'
