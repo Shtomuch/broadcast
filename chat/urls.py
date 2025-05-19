@@ -11,7 +11,6 @@ urlpatterns = [
     path("r/<slug:slug>/", RoomJoinView.as_view(), name="join"),
     path("r/<slug:slug>/leave/", LeaveRoomView.as_view(), name="leave"),
     path("r/<slug:slug>/pwd/", RoomPasswordView.as_view(), name="pwd_prompt"),
-    path("rooms/new/", RoomCreateView.as_view(), name="create"),
     path("r/<slug:slug>/delete/", RoomDeleteView.as_view(), name="delete"),
 
 ]

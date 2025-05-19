@@ -35,11 +35,13 @@ class MeetingCreateView(LoginRequiredMixin, CreateView):
 
 
 class MeetingUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    """Редагування зустрічі (додаємо/забираємо учасників)."""
+    """Редагування зустрічі."""
     model = Meeting
     form_class = MeetingForm
     template_name = 'meetings/update.html'
-    success_url = reverse_lazy('meetings:list')
+    context_object_name = 'meeting'
+    slug_field = 'room_name'
+    slug_url_kwarg = 'slug'
 
     def test_func(self):
         # лише хост може редагувати
