@@ -1,8 +1,8 @@
 from django.conf import settings
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import (
-    ListView, CreateView, DetailView, UpdateView, TemplateView
+    ListView, CreateView, DetailView, UpdateView, View, DeleteView, TemplateView
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
@@ -59,20 +59,30 @@ class MeetingDetailView(LoginRequiredMixin, DetailView):
 
 
 class MeetingJoinView(TemplateView):
-    """Доступний абсолютно всім за URL (без LoginRequiredMixin)."""
+    """Embeds the public Jitsi meeting and redirects home when finished."""
     template_name = 'meetings/join.html'
 
     def dispatch(self, request, *args, **kwargs):
-        meeting = get_object_or_404(Meeting, room_name=kwargs['slug'])
-        # якщо користувач залогінений – додаємо в participants
-        if request.user.is_authenticated and request.user != meeting.host \
-           and not meeting.participants.filter(pk=request.user.pk).exists():
-            meeting.participants.add(request.user)
-        # public access ok → продовжуємо
+        self.meeting = get_object_or_404(Meeting, room_name=kwargs['slug'])
+        if request.user.is_authenticated and request.user != self.meeting.host \
+           and not self.meeting.participants.filter(pk=request.user.pk).exists():
+            self.meeting.participants.add(request.user)
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['meeting'] = get_object_or_404(Meeting, room_name=self.kwargs['slug'])
+        ctx['meeting'] = self.meeting
         ctx['JITSI_DOMAIN'] = getattr(settings, 'JITSI_DOMAIN', 'meet.jit.si')
         return ctx
+
+
+class MeetingDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Meeting
+    template_name = 'meetings/meeting_confirm_delete.html'
+    slug_field = 'room_name'
+    slug_url_kwarg = 'slug'
+    success_url = reverse_lazy('meetings:list')
+
+    def test_func(self):
+        return self.get_object().host == self.request.user
+

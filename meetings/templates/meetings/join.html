@@ -5,7 +5,6 @@
 
 {% block extra_css %}
 <style>
-  /* 1) Повністю прибираємо відступи й флекс із body */
   html, body {
     height: 100% !important;
     margin: 0 !important;
@@ -14,10 +13,8 @@
   body.d-flex.flex-column.min-vh-100 {
     display: block !important;
   }
-
-  /* 2) Розтягуємо контейнер і всі його прямі діти + pre-join екран */
   #jitsi-container,
-  #jitsi-container > * ,
+  #jitsi-container > *,
   .prejoin-screen,
   .welcome-page-content,
   .lobby-page-container {
@@ -30,41 +27,22 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script>
-    const JITSI_DOMAIN = '{{ JITSI_DOMAIN }}';
-  </script>
-
+  <script>const JITSI_DOMAIN = '{{ JITSI_DOMAIN }}';</script>
   <script src="https://{{ JITSI_DOMAIN }}/external_api.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // 3) Видаляємо Bootstrap-класи, щоб не лізли флекси та мін. висота
       document.body.classList.remove('d-flex', 'flex-column', 'min-vh-100');
-
-      // 4) Порожній body → наш контейнер
       document.body.innerHTML = '<div id="jitsi-container"></div>';
-
       const options = {
-        roomName: '{{ meeting.room_name }}',
+        roomName: '{{ meeting.jitsi_room }}',
         parentNode: document.getElementById('jitsi-container'),
         width: '100%',
         height: '100%',
-        configOverwrite: {
-          prejoinPageEnabled: true,    // можете вимкнути, якщо не потрібен
-          enableWelcomePage: false,
-          lobbyEnabled: false
-        },
-        interfaceConfigOverwrite: {
-          TOOLBAR_BUTTONS: [
-            'microphone','camera','desktop','hangup',
-            'chat','tileview','recording'
-          ]
-        }
+        configOverwrite: { prejoinPageEnabled: true, enableWelcomePage: false, lobbyEnabled: false },
+        interfaceConfigOverwrite: { TOOLBAR_BUTTONS: ['microphone','camera','desktop','hangup','chat','tileview','recording'] }
       };
-
       const api = new JitsiMeetExternalAPI(JITSI_DOMAIN, options);
-
-      // 5) При виході — переходимо на головну
-      const goHome = () => window.location.href = '{% url "meetings:list" %}';
+      const goHome = () => window.location.href = '{% url "home" %}';
       api.addEventListener('videoConferenceLeft', goHome);
       api.addEventListener('readyToClose', goHome);
     });

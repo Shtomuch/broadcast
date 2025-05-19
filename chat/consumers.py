@@ -45,6 +45,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "author": msg["author"],
                 "content": msg["content"],
                 "created": msg["created"],
+                "file_url": msg.get("file_url", ""),
             },
         )
 
@@ -52,14 +53,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(event))
 
     @database_sync_to_async
-    def _save_message(self, content):
+    def _save_message(self, content, file=None):
         message = Message.objects.create(
             room=self.room,
             author=self.scope["user"],
             content=content,
+            file=file,
         )
         return {
             "author": self.scope["user"].get_username(),
             "content": content,
             "created": message.created.strftime("%H:%M"),
+            "file_url": message.file.url if message.file else "",
         }

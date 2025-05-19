@@ -31,7 +31,7 @@
       <ul class="list-group list-group-flush" id="meetings-list">
         {% for m in meetings %}
           {% url 'meetings:join' slug=m.room_name as join_path %}
-          {% with full_join_url=request.scheme|add:"://"|add:request.get_host|add:join_path %}
+          {% with full_join_url=m.jitsi_url %}
           <li class="list-group-item d-flex justify-content-between align-items-start">
             <div class="flex-grow-1">
               <div class="fw-bold">{{ m.title }}</div>

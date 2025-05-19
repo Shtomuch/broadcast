@@ -33,6 +33,13 @@
            class="btn btn-outline-danger btn-sm">
           <i class="bi bi-trash"></i>
         </a>
+        {% else %}
+        <form action="{% url 'chat:leave' room.slug %}" method="post" class="d-inline">
+          {% csrf_token %}
+          <button class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-x"></i>
+          </button>
+        </form>
         {% endif %}
       </div>
     </li>
@@ -41,3 +48,4 @@
   {% endfor %}
 </ul>
 {% endblock %}
+

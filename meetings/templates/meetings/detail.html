@@ -39,6 +39,9 @@
                 <a href="{% url 'meetings:update' slug=meeting.room_name %}" class="btn btn-outline-primary">
                   <i class="bi bi-pencil-square"></i> Редагувати
                 </a>
+                <a href="{% url 'meetings:delete' slug=meeting.room_name %}" class="btn btn-outline-danger">
+                  <i class="bi bi-trash"></i> Видалити
+                </a>
               {% endif %}
             <a href="{% url 'meetings:list' %}" class="btn btn-outline-secondary">Назад</a>
           </div>

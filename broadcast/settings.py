@@ -34,10 +34,10 @@ ALLOWED_HOSTS = [
     'test.shtoma.top',
 ]
 
-# Домомін для Jitsi API (без схеми й порту — ngrok автоматично портує 443→8443)
+# Публічний Jitsi‑домен
 JITSI_DOMAIN = os.getenv(
     'JITSI_DOMAIN',
-    'meet.shtoma.top'
+    'meet.jit.si'
 )
 
 # Дозволяємо CSRF для обох https‑доменів

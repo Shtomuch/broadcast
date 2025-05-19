@@ -26,19 +26,27 @@
      style="height:400px; overflow-y:auto;"
      data-slug="{{ room.slug }}">
   {% for msg in room.messages.all %}
-    <div><strong>{{ msg.author.username }}</strong>
-         [{{ msg.created|time:"H:i" }}]: {{ msg.content }}</div>
+    <div>
+      <strong>{{ msg.author.username }}</strong>
+      [{{ msg.created|time:"H:i" }}]: {{ msg.content }}
+      {% if msg.file %}
+        <a href="{{ msg.file.url }}" download>📎</a>
+      {% endif %}
+    </div>
   {% endfor %}
 </div>
 
 {% if user.is_authenticated %}
-<div class="input-group">
-  <input id="msg-input" class="form-control" placeholder="Повідомлення…">
-  <button id="send-btn" class="btn btn-primary">
+<form id="msg-form" class="input-group" method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <input id="msg-input" name="content" class="form-control" placeholder="Повідомлення…">
+  <input id="file-input" type="file" name="file" class="form-control">
+  <button id="send-btn" type="button" class="btn btn-primary">
     <i class="bi bi-send"></i>
   </button>
-</div>
+</form>
 {% endif %}
 
 <script src="{% static 'chat/js/chat.js' %}"></script>
 {% endblock %}
+

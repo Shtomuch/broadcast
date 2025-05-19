@@ -9,7 +9,9 @@ from django.views.generic import (
 from django.http import HttpResponseForbidden
 
 from .forms import ChatRoomForm, PasswordForm
-from .models import ChatRoom
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from .models import ChatRoom, Message
 
 class RoomListView(LoginRequiredMixin, ListView):
     model = ChatRoom
@@ -18,12 +20,9 @@ class RoomListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         u = self.request.user
-        public_qs  = ChatRoom.objects.filter(is_private=False)
-        private_qs = ChatRoom.objects.filter(
-            is_private=True
-        ).filter(models.Q(participants=u) | models.Q(host=u))
-
-        return (public_qs | private_qs).distinct().order_by("name")
+        return ChatRoom.objects.filter(
+            models.Q(host=u) | models.Q(participants=u)
+        ).distinct().order_by("name")
 
 class RoomCreateView(LoginRequiredMixin, CreateView):
     model = ChatRoom
@@ -61,6 +60,26 @@ class RoomJoinView(TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx["room"] = self.room
         return ctx
+
+    def post(self, request, slug):
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
+        content = request.POST.get("content", "")
+        uploaded = request.FILES.get("file")
+        msg = Message.objects.create(room=self.room, author=request.user,
+                                     content=content, file=uploaded)
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"chat_{self.room.slug}",
+            {
+                "type": "chat_message",
+                "author": request.user.get_username(),
+                "content": content,
+                "created": msg.created.strftime("%H:%M"),
+                "file_url": msg.file.url if msg.file else "",
+            },
+        )
+        return redirect("chat:join", slug=self.room.slug)
 
 class LeaveRoomView(LoginRequiredMixin, View):
     def post(self, request, slug):

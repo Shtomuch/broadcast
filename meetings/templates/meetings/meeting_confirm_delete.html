@@ -1,0 +1,20 @@
+{% extends 'users/base.html' %}
+{% block title %}Видалити зустріч{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="alert alert-danger shadow-sm">
+        <h4 class="alert-heading">Видалити «{{ object.title }}»?</h4>
+        <p class="mb-3">Усі дані зустрічі буде втрачено безповоротно.</p>
+        <form method="post">
+          {% csrf_token %}
+          <a href="{% url 'meetings:list' %}" class="btn btn-secondary">Скасувати</a>
+          <button class="btn btn-danger">Так, видалити</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
