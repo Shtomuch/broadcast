@@ -11,7 +11,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.slug = self.scope["url_route"]["kwargs"]["slug"]
         self.room_group_name = f"chat_{self.slug}"
 
-        self.room = await database_sync_to_async(ChatRoom.objects.get)(slug=self.slug)
+        try:
+            self.room = await database_sync_to_async(ChatRoom.objects.get)(slug=self.slug)
+        except ChatRoom.DoesNotExist:
+            await self.close()
+            return
 
         user = self.scope["user"]
 

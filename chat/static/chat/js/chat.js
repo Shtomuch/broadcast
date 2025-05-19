@@ -22,6 +22,14 @@ document.addEventListener("DOMContentLoaded", () => {
     chatBox.scrollTop = chatBox.scrollHeight;
   };
 
+  socket.onclose = () => {
+    console.warn("WebSocket closed");
+  };
+
+  socket.onerror = () => {
+    console.error("WebSocket error");
+  };
+
   sendBtn.onclick = () => {
     if (msgInput.value.trim() === "") return;
     if (socket.readyState !== WebSocket.OPEN) {
