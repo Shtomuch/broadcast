@@ -23,10 +23,13 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   sendBtn.onclick = () => {
-    if (msgInput.value.trim() !== "") {
-      socket.send(JSON.stringify({ message: msgInput.value }));
-      msgInput.value = "";
+    if (msgInput.value.trim() === "") return;
+    if (socket.readyState !== WebSocket.OPEN) {
+      console.warn("WebSocket is not open");
+      return;
     }
+    socket.send(JSON.stringify({ message: msgInput.value }));
+    msgInput.value = "";
   };
 
   if (uploadBtn) {
