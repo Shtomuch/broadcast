@@ -1,0 +1,15 @@
+{% extends 'users/base.html' %}
+{% block title %}{{ meeting.title }}{% endblock %}
+{% block content %}
+<div id="jitsi" style="height:80vh; width:100%;"></div>
+<script src="https://{{ jitsi_domain }}/external_api.js"></script>
+<script>
+  const api = new JitsiMeetExternalAPI("{{ jitsi_domain }}", {
+    roomName: "{{ meeting.jitsi_room }}",
+    parentNode: document.getElementById('jitsi')
+  });
+  api.addListener('readyToClose', () => {
+    window.location.href = '{% url "home" %}';
+  });
+</script>
+{% endblock %}

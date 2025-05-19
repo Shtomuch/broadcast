@@ -1,0 +1,12 @@
+{% extends 'users/base.html' %}
+{% block title %}Видалити зустріч{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h2 class="h5">Підтвердити видалення зустрічі "{{ object.title }}"?</h2>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Так, видалити</button>
+    <a href="{% url 'meetings:detail' slug=object.room_name %}" class="btn btn-secondary">Скасувати</a>
+  </form>
+</div>
+{% endblock %}
