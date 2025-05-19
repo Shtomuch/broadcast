@@ -6,7 +6,15 @@
   <form method="post" class="form-container" novalidate>
     {% csrf_token %}
     {{ form.non_field_errors }}
-    {{ form.as_p }}
+    {% for field in form %}
+      <div class="form-field">
+        {{ field.label_tag }}
+        {{ field }}
+        {% if field.errors %}
+          <div class="error">{{ field.errors|striptags }}</div>
+        {% endif %}
+      </div>
+    {% endfor %}
     <button type="submit" class="btn">Зареєструватися</button>
   </form>
 {% endblock %}
