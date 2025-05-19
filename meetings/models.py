@@ -2,6 +2,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import slugify
 
 User = settings.AUTH_USER_MODEL
@@ -13,6 +14,7 @@ class Meeting(models.Model):
     title = models.CharField("Тема зустрічі", max_length=200)
     description = models.TextField("Опис", blank=True)
     room_name = models.SlugField("Назва кімнати", max_length=255, unique=True, blank=True)
+    jitsi_room = models.CharField("Jitsi room", max_length=50, blank=True, editable=False)
     scheduled_time = models.DateTimeField("Заплановано на")
     duration = models.PositiveIntegerField("Тривалість (хвилин)", default=60)
     participants = models.ManyToManyField(User, related_name='meetings',
@@ -30,6 +32,8 @@ class Meeting(models.Model):
         if not self.room_name:
             base = slugify(self.title) or "meeting"
             self.room_name = f"{base}-{uuid.uuid4().hex[:6]}"
+        if not self.jitsi_room:
+            self.jitsi_room = f"TeamMeet_{timezone.now().strftime('%Y%m%d_%H%M%S')}"
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -37,3 +41,8 @@ class Meeting(models.Model):
 
     def get_absolute_url(self):
         return reverse('meetings:detail', kwargs={'slug': self.room_name})
+
+    @property
+    def jitsi_url(self) -> str:
+        domain = settings.JITSI_DOMAIN
+        return f"https://{domain}/{self.jitsi_room}"

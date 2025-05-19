@@ -1,17 +1,20 @@
 import json
+from json import JSONDecodeError
+
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.utils import timezone
-from .models import ChatRoom, Message
 from channels.db import database_sync_to_async
+from django.contrib.auth.models import AnonymousUser
+from .models import ChatRoom, Message
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.slug = self.scope["url_route"]["kwargs"]["slug"]
         self.room_group_name = f"chat_{self.slug}"
 
-        # перевіряємо, що користувач має доступ
         self.room = await database_sync_to_async(ChatRoom.objects.get)(slug=self.slug)
+
         user = self.scope["user"]
+
         if not user.is_authenticated:
             await self.close()
             return
@@ -29,32 +32,40 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def disconnect(self, code):
-        # вихід із групи
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
-    async def receive(self, text_data):
-        data = json.loads(text_data)
-        msg = data.get("message", "").strip()
-        file_info = data.get("file")  # якщо будемо підключати файл via base64 / URL
+    async def receive(self, text_data=None, bytes_data=None):
+        if not text_data:  # <‑‑ пропускаємо ping/порожні
+            return
+        try:
+            data = json.loads(text_data)
+        except JSONDecodeError:
+            # можна залогувати й проігнорувати
+            return
 
-        user = self.scope["user"]
-        # зберігаємо в БД
-        message = await database_sync_to_async(Message.objects.create)(
-            room=self.room, user=user, content=msg
-        )
-
-        # розсилаємо всім у кімнаті
+        msg = await self._save_message(data.get("message", ""))
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 "type": "chat_message",
-                "message": msg,
-                "username": user.username,
-                "timestamp": timezone.localtime(message.timestamp).strftime("%H:%M"),
-                "attachment_url": None,
-            }
+                "author": msg["author"],
+                "content": msg["content"],
+                "created": msg["created"],
+            },
         )
 
     async def chat_message(self, event):
-        # надсилаємо json назад клієнту
         await self.send(text_data=json.dumps(event))
+
+    @database_sync_to_async
+    def _save_message(self, content):
+        message = Message.objects.create(
+            room=self.room,
+            author=self.scope["user"],
+            content=content,
+        )
+        return {
+            "author": self.scope["user"].get_username(),
+            "content": content,
+            "created": message.created.strftime("%H:%M"),
+        }

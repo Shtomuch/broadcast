@@ -1,0 +1,52 @@
+{% extends 'users/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Нова кімната{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header bg-success text-white">Створити кімнату</div>
+
+        <div class="card-body">
+          <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <label class="form-label">Назва кімнати</label>
+              {{ form.name|add_class:"form-control" }}
+            </div>
+
+            <div class="form-check form-switch mb-3">
+              {{ form.is_private|add_class:"form-check-input" }}
+              <label class="form-check-label">Приватна кімната</label>
+            </div>
+
+            <div id="pwd-field" class="mb-3 d-none">
+              <label class="form-label">Пароль</label>
+              {{ form.password|add_class:"form-control" }}
+              <div class="form-text">Потрібен для входу інших користувачів.</div>
+            </div>
+
+            <button class="btn btn-success w-100">
+              <i class="bi bi-check-lg"></i> Створити
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.querySelector('[name="is_private"]');
+    const pwdDiv = document.getElementById('pwd-field');
+    const sync = () => pwdDiv.classList.toggle('d-none', !toggle.checked);
+    toggle.addEventListener('change', sync);
+    sync();                     // одразу після завантаження
+  });
+</script>
+{% endblock %}

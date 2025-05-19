@@ -1,8 +1,8 @@
 from django.conf import settings
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import (
-    ListView, CreateView, DetailView, UpdateView, TemplateView
+    ListView, CreateView, DetailView, UpdateView, View
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
@@ -35,11 +35,13 @@ class MeetingCreateView(LoginRequiredMixin, CreateView):
 
 
 class MeetingUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    """Редагування зустрічі (додаємо/забираємо учасників)."""
+    """Редагування зустрічі."""
     model = Meeting
     form_class = MeetingForm
     template_name = 'meetings/update.html'
-    success_url = reverse_lazy('meetings:list')
+    context_object_name = 'meeting'
+    slug_field = 'room_name'
+    slug_url_kwarg = 'slug'
 
     def test_func(self):
         # лише хост може редагувати
@@ -56,24 +58,12 @@ class MeetingDetailView(LoginRequiredMixin, DetailView):
         return get_object_or_404(Meeting, room_name=self.kwargs['slug'])
 
 
-class MeetingJoinView(LoginRequiredMixin, TemplateView):
-    """
-    Сторінка join. Якщо заходить не‑хост і не в participants — автоматично додаємо.
-    """
-    template_name = 'meetings/join.html'
+class MeetingJoinView(View):
+    """Redirects users to the public Jitsi meeting URL."""
 
-    def dispatch(self, request, *args, **kwargs):
-        meeting = get_object_or_404(Meeting, room_name=kwargs['slug'])
-
-        # якщо не хост і ще не учасник — додаємо
-        if request.user != meeting.host and not meeting.participants.filter(pk=request.user.pk).exists():
+    def get(self, request, slug):
+        meeting = get_object_or_404(Meeting, room_name=slug)
+        if request.user.is_authenticated and request.user != meeting.host \
+           and not meeting.participants.filter(pk=request.user.pk).exists():
             meeting.participants.add(request.user)
-
-        # тепер уже гарантовано — хост або учасник
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx['meeting'] = get_object_or_404(Meeting, room_name=self.kwargs['slug'])
-        ctx['JITSI_DOMAIN'] = getattr(settings, 'JITSI_DOMAIN', 'meet.jit.si')
-        return ctx
+        return redirect(meeting.jitsi_url)

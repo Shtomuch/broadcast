@@ -1,0 +1,43 @@
+{% extends 'users/base.html' %}
+{% block title %}Чат‑кімнати{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h4 mb-0">Чат‑кімнати</h2>
+  <a href="{% url 'chat:create' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg"></i> Нова кімната
+  </a>
+</div>
+
+<ul class="list-group">
+  {% for room in rooms %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <span>
+        {% if room.is_private %}
+          <i class="bi bi-lock-fill text-danger me-1"></i>
+          <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle rounded-pill me-1">
+            Приватна
+          </span>
+        {% else %}
+          <i class="bi bi-unlock text-success me-1"></i>
+        {% endif %}
+        {{ room.name }}
+      </span>
+
+      <div class="btn-group">
+        <a href="{% url 'chat:join' room.slug %}"
+           class="btn btn-outline-secondary btn-sm">Увійти</a>
+
+        {% if room.host == user %}
+        <a href="{% url 'chat:delete' room.slug %}"
+           class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-trash"></i>
+        </a>
+        {% endif %}
+      </div>
+    </li>
+  {% empty %}
+    <li class="list-group-item text-muted">Немає доступних кімнат.</li>
+  {% endfor %}
+</ul>
+{% endblock %}
