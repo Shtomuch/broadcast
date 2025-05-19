@@ -2,25 +2,19 @@
 {% block title %}Реєстрація{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <div class="row justify-content-center">
-    <div class="col-sm-10 col-md-6 col-lg-5">
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-success text-white">
-          <h2 class="h5 mb-0">Створити обліковий запис</h2>
-        </div>
-        <div class="card-body">
-          <form method="post" novalidate>
-            {% csrf_token %}
-            {{ form.non_field_errors }}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-success w-100 mt-2">
-              <i class="bi bi-person-plus"></i> Зареєструватися
-            </button>
-          </form>
-        </div>
+  <h2>Реєстрація</h2>
+  <form method="post" class="form-container" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      <div class="form-field">
+        {{ field.label_tag }}
+        {{ field }}
+        {% if field.errors %}
+          <div class="error">{{ field.errors|striptags }}</div>
+        {% endif %}
       </div>
-    </div>
-  </div>
-</div>
+    {% endfor %}
+    <button type="submit" class="btn">Зареєструватися</button>
+  </form>
 {% endblock %}

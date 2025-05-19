@@ -14,14 +14,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room = await database_sync_to_async(ChatRoom.objects.get)(slug=self.slug)
 
         user = self.scope["user"]
-        if self.room.is_private and isinstance(user, AnonymousUser):
-            return await self.close()
 
-        # security: only participants for private rooms
-        if self.room.is_private and not await database_sync_to_async(
-                self.room.participants.filter(pk=user.pk).exists)():
-            return await self.close()
+        if not user.is_authenticated:
+            await self.close()
+            return
 
+        if self.room.is_private:
+            has_access = await database_sync_to_async(
+                lambda: self.room.participants.filter(pk=user.pk).exists()
+            )()
+            if not has_access:
+                await self.close()
+                return
+
+        # додати до групи каналів
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
