@@ -1,8 +1,8 @@
 from django.conf import settings
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import (
-    ListView, CreateView, DetailView, UpdateView, TemplateView
+    ListView, CreateView, DetailView, UpdateView, View
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
@@ -58,21 +58,12 @@ class MeetingDetailView(LoginRequiredMixin, DetailView):
         return get_object_or_404(Meeting, room_name=self.kwargs['slug'])
 
 
-class MeetingJoinView(TemplateView):
-    """Доступний абсолютно всім за URL (без LoginRequiredMixin)."""
-    template_name = 'meetings/join.html'
+class MeetingJoinView(View):
+    """Redirects users to the public Jitsi meeting URL."""
 
-    def dispatch(self, request, *args, **kwargs):
-        meeting = get_object_or_404(Meeting, room_name=kwargs['slug'])
-        # якщо користувач залогінений – додаємо в participants
+    def get(self, request, slug):
+        meeting = get_object_or_404(Meeting, room_name=slug)
         if request.user.is_authenticated and request.user != meeting.host \
            and not meeting.participants.filter(pk=request.user.pk).exists():
             meeting.participants.add(request.user)
-        # public access ok → продовжуємо
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx['meeting'] = get_object_or_404(Meeting, room_name=self.kwargs['slug'])
-        ctx['JITSI_DOMAIN'] = getattr(settings, 'JITSI_DOMAIN', 'meet.jit.si')
-        return ctx
+        return redirect(meeting.jitsi_url)
