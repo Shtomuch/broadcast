@@ -33,6 +33,11 @@
            class="btn btn-outline-danger btn-sm">
           <i class="bi bi-trash"></i>
         </a>
+        {% elif user in room.participants.all %}
+        <form action="{% url 'chat:leave' room.slug %}" method="post" class="d-inline">
+          {% csrf_token %}
+          <button class="btn btn-outline-secondary btn-sm">Вийти</button>
+        </form>
         {% endif %}
       </div>
     </li>

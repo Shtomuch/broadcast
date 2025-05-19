@@ -1,8 +1,8 @@
 from django.conf import settings
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import (
-    ListView, CreateView, DetailView, UpdateView, View
+    ListView, CreateView, DetailView, UpdateView, View, DeleteView
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
@@ -58,12 +58,26 @@ class MeetingDetailView(LoginRequiredMixin, DetailView):
         return get_object_or_404(Meeting, room_name=self.kwargs['slug'])
 
 
+class MeetingDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Meeting
+    template_name = 'meetings/confirm_delete.html'
+    slug_field = 'room_name'
+    slug_url_kwarg = 'slug'
+    success_url = reverse_lazy('meetings:list')
+
+    def test_func(self):
+        return self.get_object().host == self.request.user
+
+
 class MeetingJoinView(View):
-    """Redirects users to the public Jitsi meeting URL."""
+    """Opens the Jitsi meeting in an embedded page."""
 
     def get(self, request, slug):
         meeting = get_object_or_404(Meeting, room_name=slug)
         if request.user.is_authenticated and request.user != meeting.host \
            and not meeting.participants.filter(pk=request.user.pk).exists():
             meeting.participants.add(request.user)
-        return redirect(meeting.jitsi_url)
+        return render(request, 'meetings/jitsi.html', {
+            'meeting': meeting,
+            'jitsi_domain': settings.JITSI_DOMAIN,
+        })

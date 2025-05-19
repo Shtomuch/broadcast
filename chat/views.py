@@ -6,10 +6,12 @@ from django.urls import reverse_lazy
 from django.views.generic import (
     ListView, CreateView, TemplateView, View, DeleteView, FormView
 )
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 from .forms import ChatRoomForm, PasswordForm
-from .models import ChatRoom
+from .models import ChatRoom, Message
 
 class RoomListView(LoginRequiredMixin, ListView):
     model = ChatRoom
@@ -18,12 +20,9 @@ class RoomListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         u = self.request.user
-        public_qs  = ChatRoom.objects.filter(is_private=False)
-        private_qs = ChatRoom.objects.filter(
-            is_private=True
-        ).filter(models.Q(participants=u) | models.Q(host=u))
-
-        return (public_qs | private_qs).distinct().order_by("name")
+        return ChatRoom.objects.filter(
+            models.Q(host=u) | models.Q(participants=u)
+        ).distinct().order_by("name")
 
 class RoomCreateView(LoginRequiredMixin, CreateView):
     model = ChatRoom
@@ -99,10 +98,39 @@ class RoomPasswordView(LoginRequiredMixin, FormView):
             "room": self.room,
         }
 class RoomDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-        model = ChatRoom
-        template_name = "chat/room_confirm_delete.html"
-        success_url = reverse_lazy("chat:rooms")
+    model = ChatRoom
+    template_name = "chat/room_confirm_delete.html"
+    success_url = reverse_lazy("chat:rooms")
 
-        def test_func(self):
-            # тільки власник (host) може видаляти
-            return self.get_object().host == self.request.user
+    def test_func(self):
+        # тільки власник (host) може видаляти
+        return self.get_object().host == self.request.user
+
+
+class FileUploadView(LoginRequiredMixin, View):
+    def post(self, request, slug):
+        room = get_object_or_404(ChatRoom, slug=slug)
+        if room.is_private and request.user not in room.participants.all() and room.host != request.user:
+            return HttpResponseForbidden()
+        file = request.FILES.get("file")
+        content = request.POST.get("content", "")
+        if not file and not content:
+            return HttpResponseForbidden()
+        msg = Message.objects.create(room=room, author=request.user, content=content, file=file)
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"chat_{room.slug}",
+            {
+                "type": "chat_message",
+                "author": msg.author.username,
+                "content": msg.content,
+                "file_url": msg.file.url if msg.file else "",
+                "created": msg.created.strftime("%H:%M"),
+            },
+        )
+        return JsonResponse({
+            "author": msg.author.username,
+            "content": msg.content,
+            "file_url": msg.file.url if msg.file else "",
+            "created": msg.created.strftime("%H:%M"),
+        })
