@@ -32,7 +32,7 @@
 {#            </li>#}
           </ul>
           <div class="mt-3 d-grid gap-2 d-sm-flex justify-content-sm-end">
-            <a href="{% url 'meetings:join' slug=meeting.room_name %}" class="btn btn-success">
+            <a href="{{ meeting.jitsi_url }}" class="btn btn-success" target="_blank">
               <i class="bi bi-camera-video"></i> Приєднатися
             </a>
               {% if request.user == meeting.host %}
