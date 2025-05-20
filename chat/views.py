@@ -134,3 +134,6 @@ class FileUploadView(LoginRequiredMixin, View):
             "file_url": msg.file.url if msg.file else "",
             "created": msg.created.strftime("%H:%M"),
         })
+
+
+

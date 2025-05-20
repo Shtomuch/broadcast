@@ -70,7 +70,7 @@ class MeetingDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 
 class MeetingJoinView(View):
-    """Redirects the user to the Jitsi service in a new tab."""
+    """Перенаправляє користувача до Jitsi-зустрічі в новій вкладці."""
 
     def get(self, request, slug):
         meeting = get_object_or_404(Meeting, room_name=slug)
