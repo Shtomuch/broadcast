@@ -70,14 +70,14 @@ class MeetingDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 
 class MeetingJoinView(View):
-    """Opens the Jitsi meeting in an embedded page."""
+    """Redirects the user to the Jitsi service in a new tab."""
 
     def get(self, request, slug):
         meeting = get_object_or_404(Meeting, room_name=slug)
         if request.user.is_authenticated and request.user != meeting.host \
            and not meeting.participants.filter(pk=request.user.pk).exists():
             meeting.participants.add(request.user)
-        return render(request, 'meetings/jitsi.html', {
+        return render(request, 'meetings/jitsi_redirect.html', {
             'meeting': meeting,
             'jitsi_domain': settings.JITSI_DOMAIN,
         })
