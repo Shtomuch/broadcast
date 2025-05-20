@@ -1,48 +1,100 @@
 {% extends 'users/base.html' %}
 {% block title %}Чат‑кімнати{% endblock %}
 
+{% block extra_css %} {# Додамо трохи кастомних стилів для списку #}
+<style>
+  .room-list-item {
+    transition: background-color 0.15s ease-in-out;
+  }
+  .room-list-item:hover {
+    background-color: #f8f9fa; /* Світлий фон при наведенні */
+  }
+  .room-name {
+    font-weight: 500; /* Трохи жирніший шрифт для назви кімнати */
+    color: #212529;
+  }
+  .room-actions .btn {
+    min-width: 80px; /* Мінімальна ширина для кнопок дій для кращого вигляду */
+    margin-left: 0.5rem; /* Відступ між кнопками */
+  }
+  .room-actions .btn:first-child {
+    margin-left: 0; /* Забираємо відступ для першої кнопки */
+  }
+  .room-actions form .btn { /* Застосовуємо стилі і до кнопки у формі */
+    min-width: 80px;
+  }
+
+  .privacy-icon {
+    font-size: 1.1rem; /* Трохи більша іконка приватності */
+  }
+  .empty-state-icon {
+    font-size: 3rem; /* Велика іконка для порожнього стану */
+    color: #6c757d; /* Bootstrap secondary color */
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="h4 mb-0">Чат‑кімнати</h2>
-  <a href="{% url 'chat:create' %}" class="btn btn-primary btn-sm">
-    <i class="bi bi-plus-lg"></i> Нова кімната
+<div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+  <h2 class="h3 mb-0 fw-bold">Чат‑кімнати</h2> {# Зробили заголовок трохи більшим #}
+  <a href="{% url 'chat:create' %}" class="btn btn-primary"> {# Забрали btn-sm для стандартного розміру кнопки #}
+    <i class="bi bi-plus-lg me-1"></i> Нова кімната
   </a>
 </div>
 
-<ul class="list-group">
+<div class="list-group shadow-sm rounded"> {# Додали тінь та заокруглення до всього списку #}
   {% for room in rooms %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-      <span>
-        {% if room.is_private %}
-          <i class="bi bi-lock-fill text-danger me-1"></i>
-          <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle rounded-pill me-1">
-            Приватна
-          </span>
-        {% else %}
-          <i class="bi bi-unlock text-success me-1"></i>
-        {% endif %}
-        {{ room.name }}
-      </span>
+    <div class="list-group-item room-list-item px-3 py-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="me-3 flex-grow-1"> {# Контейнер для назви та статусу, дозволяє тексту переноситись #}
+          <div class="d-flex align-items-center mb-1">
+            {% if room.is_private %}
+              <i class="bi bi-lock-fill text-danger me-2 privacy-icon" title="Приватна кімната"></i>
+            {% else %}
+              <i class="bi bi-unlock-fill text-success me-2 privacy-icon" title="Публічна кімната"></i>
+            {% endif %}
+            <span class="room-name">{{ room.name }}</span>
+          </div>
+          {% if room.is_private %}
+            <div>
+              <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle rounded-pill">
+                <small>Приватна</small>
+              </span>
+            </div>
+          {% endif %}
+        </div>
 
-      <div class="btn-group">
-        <a href="{% url 'chat:join' room.slug %}"
-           class="btn btn-outline-secondary btn-sm">Увійти</a>
+        {# Кнопки дій - прибрали btn-group та використовуємо flexbox з відступами #}
+        <div class="room-actions d-flex align-items-center flex-shrink-0">
+          <a href="{% url 'chat:join' room.slug %}"
+             class="btn btn-outline-primary btn-sm">
+             <i class="bi bi-box-arrow-in-right me-1"></i>Увійти
+          </a>
 
-        {% if room.host == user %}
-        <a href="{% url 'chat:delete' room.slug %}"
-           class="btn btn-outline-danger btn-sm">
-          <i class="bi bi-trash"></i>
-        </a>
-        {% elif user in room.participants.all %}
-        <form action="{% url 'chat:leave' room.slug %}" method="post" class="d-inline">
-          {% csrf_token %}
-          <button class="btn btn-outline-secondary btn-sm">Вийти</button>
-        </form>
-        {% endif %}
+          {% if room.host == user %}
+          <a href="{% url 'chat:delete' room.slug %}"
+             class="btn btn-outline-danger btn-sm"
+             title="Видалити кімнату">
+            <i class="bi bi-trash-fill"></i>
+          </a>
+          {% elif user in room.participants.all %}
+          {# Форма для кнопки "Вийти" тепер є flex-item #}
+          <form action="{% url 'chat:leave' room.slug %}" method="post" class="m-0">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-warning btn-sm">
+              <i class="bi bi-door-open me-1"></i>Вийти
+            </button>
+          </form>
+          {% endif %}
+        </div>
       </div>
-    </li>
+    </div>
   {% empty %}
-    <li class="list-group-item text-muted">Немає доступних кімнат.</li>
+    <div class="list-group-item text-center py-5">
+      <i class="bi bi-chat-square-dots-fill empty-state-icon mb-3 d-block"></i>
+      <h5 class="text-muted mb-2">Чат-кімнати відсутні</h5>
+      <p class="text-muted small">Наразі немає доступних кімнат. <br>Спробуйте створити нову, щоб розпочати спілкування!</p>
+    </div>
   {% endfor %}
-</ul>
+</div>
 {% endblock %}

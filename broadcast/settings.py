@@ -52,12 +52,14 @@ JITSI_DOMAIN = os.getenv(
 # Дозволяємо CSRF для обох https‑доменів
 CSRF_TRUSTED_ORIGINS = [
     'https://test.shtoma.top',
+    "https://localhost:8000",
+    "http://localhost:8000",
+    "http://0.0.0.0:8000",
+    "http://127.0.0.1:8000",
 ]
 
 # production safety
 SECURE_SSL_REDIRECT = False              # Django всегда редиректит на https
-SESSION_COOKIE_SECURE = True                # куки только по https
-CSRF_COOKIE_SECURE    = True
 
 AUTH_USER_MODEL = 'users.User'
 # Application definition
@@ -85,7 +87,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE    = False
 ROOT_URLCONF = 'broadcast.urls'
 
 TEMPLATES = [
@@ -171,8 +174,8 @@ LOGIN_REDIRECT_URL = reverse_lazy('meetings:list')
 LOGOUT_REDIRECT_URL = reverse_lazy('users:login')
 LOGIN_URL = reverse_lazy('users:login')
 
-CELERY_BROKER_URL = 'redis://192.168.1.77:6379/0' # URL вашого Redis сервера
-CELERY_RESULT_BACKEND = 'redis://192.168.1.77:6379/0' # Для зберігання результатів завдань (опціонально)
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0' # Для зберігання результатів завдань (опціонально)
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

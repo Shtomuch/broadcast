@@ -69,3 +69,54 @@ class SignUpForm(UserCreationForm):
             })
             # Ви вже очистили help_text через Meta.help_texts, але якщо потрібно індивідуально:
             # field.help_text = ""
+
+
+class UserProfileEditForm(forms.ModelForm):
+    # Ви можете перевизначити поля тут, якщо хочете змінити віджети або валідацію
+    # Наприклад, зробити email обов'язковим, хоча модель може дозволяти null.
+    email = forms.EmailField(
+        label="Електронна пошта",
+        required=True, # Якщо email має бути обов'язковим при редагуванні
+        widget=forms.EmailInput(attrs={'autocomplete': 'email'})
+    )
+    first_name = forms.CharField(
+        label="Ім'я",
+        max_length=30,
+        required=False,
+        widget=forms.TextInput(attrs={'autocomplete': 'given-name'})
+    )
+    last_name = forms.CharField(
+        label="Прізвище",
+        max_length=150, # Django User model має last_name до 150 символів
+        required=False,
+        widget=forms.TextInput(attrs={'autocomplete': 'family-name'})
+    )
+    department = forms.CharField(
+        label="Відділ",
+        max_length=100,
+        required=False
+    )
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'department'] # Порядок полів у формі
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        placeholders = {
+            "email": "example@example.com",
+            "first_name": "Ваше ім'я",
+            "last_name": "Ваше прізвище",
+            "department": "Назва вашого відділу",
+        }
+        for name, field in self.fields.items():
+            # Застосовуємо Bootstrap класи та плейсхолдери
+            current_class = field.widget.attrs.get("class", "")
+            new_classes = "form-control"
+            if self.errors.get(name): # Якщо є помилки для цього поля
+                new_classes += " is-invalid"
+
+            field.widget.attrs.update({
+                "class": new_classes,
+                "placeholder": placeholders.get(name, field.label),
+            })

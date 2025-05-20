@@ -1,32 +1,69 @@
 {% extends 'users/base.html' %}
-{% block title %}Профіль{% endblock %}
+{% load static %} {# Для майбутнього аватара або інших статичних файлів #}
 
-{# ── Відкриваємо контент‑блок ──────────────────────────────── #}
+{% block title %}Мій профіль{% endblock %}
+
 {% block content %}
-<div class="container py-4">
+<div class="container py-5">
   <div class="row justify-content-center">
-    <div class="col-lg-8">
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-info text-white">
-          <h2 class="h5 mb-0">Профіль користувача</h2>
+    <div class="col-lg-9 col-xl-8">
+
+      {# Блок для відображення повідомлень (наприклад, після успішного оновлення) #}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show shadow-sm mb-4" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <div class="card shadow-lg border-0 rounded-3 overflow-hidden">
+        <div class="card-header bg-gradient bg-info text-white text-center py-3">
+          <h2 class="h4 mb-0 fw-bold d-flex align-items-center justify-content-center">
+            <i class="bi bi-person-badge-fill me-2 fs-3"></i>Профіль користувача
+          </h2>
         </div>
-        <div class="card-body">
-          <dl class="row mb-0">
-            <dt class="col-sm-4">Користувач</dt>
-            <dd class="col-sm-8">{{ user.username }}</dd>
+        <div class="card-body p-4 p-md-5">
+          <div class="row align-items-center">
+            <div class="col-md-4 text-center mb-4 mb-md-0">
+              {# Місце для аватара користувача (майбутнє покращення) #}
+              <div class="bg-light d-flex align-items-center justify-content-center rounded-circle mx-auto" style="width: 130px; height: 130px;">
+                  <i class="bi bi-person-fill text-secondary" style="font-size: 5rem;"></i>
+              </div>
+              <h3 class="h5 mt-3 mb-1 fw-medium">{{ user.get_full_name|default:user.username }}</h3>
+              <p class="text-muted small">{{ user.email }}</p>
+            </div>
+            <div class="col-md-8">
+              <h4 class="h6 text-muted mb-3 border-bottom pb-2"><i class="bi bi-info-circle-fill me-1 text-info"></i>Деталі профілю</h4>
+              <dl class="row mb-0">
+                <dt class="col-sm-4 text-muted">Логін:</dt>
+                <dd class="col-sm-8">{{ user.username }}</dd>
 
-            <dt class="col-sm-4">Імʼя</dt>
-            <dd class="col-sm-8">{{ user.first_name|default:"—" }}</dd>
+                <dt class="col-sm-4 text-muted">Імʼя:</dt>
+                <dd class="col-sm-8">{{ user.first_name|default:'<span class="text-body-secondary fst-italic small">Не вказано</span>'|safe }}</dd>
 
-            <dt class="col-sm-4">Прізвище</dt>
-            <dd class="col-sm-8">{{ user.last_name|default:"—" }}</dd>
+                <dt class="col-sm-4 text-muted">Прізвище:</dt>
+                <dd class="col-sm-8">{{ user.last_name|default:'<span class="text-body-secondary fst-italic small">Не вказано</span>'|safe }}</dd>
 
-            <dt class="col-sm-4">Email</dt>
-            <dd class="col-sm-8">{{ user.email }}</dd>
+                <dt class="col-sm-4 text-muted">Відділ:</dt>
+                <dd class="col-sm-8">{{ user.department|default:'<span class="text-body-secondary fst-italic small">Не вказано</span>'|safe }}</dd>
+              </dl>
+            </div>
+          </div>
 
-            <dt class="col-sm-4">Відділ</dt>
-            <dd class="col-sm-8">{{ user.department|default:"—" }}</dd>
-          </dl>
+          <hr class="my-4">
+
+          <div class="text-center">
+            <a href="{% url 'users:profile_edit' %}" class="btn btn-primary btn-lg px-4">
+              <i class="bi bi-pencil-square me-2"></i>Редагувати профіль
+            </a>
+            {# Приклад кнопки для зміни пароля, якщо ви реалізуєте цю функціональність #}
+            {# <a href="{% url 'password_change' %}" class="btn btn-outline-secondary ms-2">Змінити пароль</a> #}
+          </div>
+        </div>
+        <div class="card-footer bg-light text-center py-3 border-top-0">
+            <small class="text-muted">Дата реєстрації: {{ user.date_joined|date:"d F Y, H:i" }}</small>
         </div>
       </div>
     </div>
