@@ -1,21 +1,166 @@
 {% extends 'users/base.html' %}
-{% block title %}{{ meeting.title }} - Redirect{% endblock %}
+{% load static %}
+{% block title %}{{ meeting.title }} - Переадресація{% endblock %}
+
+{% block extra_head %}
+<style>
+  body {
+    background-color: #f0f2f5; /* Трохи інший світлий фон */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Сучасніший шрифт */
+  }
+  .redirect-card {
+    background-color: #ffffff;
+    padding: 35px 40px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    margin-top: 60px;
+    border: 1px solid #e0e0e0;
+  }
+  .redirect-card .meeting-title {
+    color: #333; /* Темніший колір для заголовка зустрічі */
+    margin-bottom: 15px;
+    font-weight: 600; /* Трохи жирніший */
+    font-size: 2rem; /* Збільшено */
+  }
+  .redirect-card .lead-text {
+    color: #555;
+    font-size: 1.1rem; /* Трохи більший текст-опис */
+    margin-bottom: 20px;
+  }
+  .redirect-card p {
+    color: #666;
+    line-height: 1.7;
+  }
+  .jitsi-link-manual {
+    font-size: 1.1rem; /* Збільшено розмір для ручного посилання */
+  }
+  .jitsi-link-manual.text-danger strong {
+      font-weight: 600; /* Зробимо текст помилки більш помітним */
+  }
+
+  .btn-home-custom {
+    background-color: #6c757d; /* Сірий, як вторинна кнопка Bootstrap */
+    border-color: #6c757d;
+    color: #fff;
+    padding: 12px 30px; /* Збільшено padding */
+    font-size: 1.1rem; /* Збільшено шрифт */
+    font-weight: 500;
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+  }
+  .btn-home-custom:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    color: #fff;
+  }
+  .btn-jitsi-primary {
+    padding: 12px 25px;
+    font-size: 1.15rem;
+  }
+  .icon-info {
+    margin-right: 10px;
+    color: #007bff;
+  }
+  .status-message {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 8px;
+  }
+  .status-message.alert-warning {
+      background-color: #fff3cd;
+      border-color: #ffeeba;
+      color: #856404;
+  }
+  .status-message.alert-danger {
+      background-color: #f8d7da;
+      border-color: #f5c6cb;
+      color: #721c24;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-5">
-  <h3>{{ meeting.title }}</h3>
-  <p>Вы были переадресованы на сервис Jitsi Meet.</p>
-  <p>Если новая вкладка не открылась автоматически, перейдите по ссылке:
-    <a href="{{ meeting.jitsi_url }}" target="_blank" id="jitsi-link">{{ meeting.jitsi_url }}</a>
-  </p>
-  <p>После завершения встречи вернитесь на эту страницу.</p>
-  <a href="{% url 'home' %}" class="btn btn-primary mt-3">На главную</a>
+  <div class="row justify-content-center">
+    <div class="col-md-9 col-lg-8">
+      <div class="redirect-card text-center">
+        <h3 class="meeting-title"><i class="fas fa-video icon-info"></i> {{ meeting.title }}</h3>
+        <p class="lead-text">Вас буде автоматично переадресовано на сервіс Jitsi Meet.</p>
+        <hr class="my-4">
+
+        <div id="redirect-status">
+            <p>Якщо нова вкладка не відкрилася автоматично протягом декількох секунд, будь ласка, перейдіть за посиланням:</p>
+            <a href="{{ meeting.jitsi_url }}" target="_blank" id="jitsi-link" class="btn btn-primary btn-lg btn-jitsi-primary my-3">
+              <i class="fas fa-external-link-alt"></i> Перейти до Jitsi: {{ meeting.jitsi_url }}
+            </a>
+        </div>
+
+        <div id="manual-open-message" class="status-message alert alert-warning mt-3" role="alert" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i> <strong>Автоматичне відкриття не спрацювало.</strong> Будь ласка, натисніть кнопку вище, щоб перейти до зустрічі.
+        </div>
+
+        <div id="error-jitsi-url-message" class="status-message alert alert-danger mt-3" role="alert" style="display: none;">
+            <i class="fas fa-times-circle"></i> <strong>Помилка:</strong> Адреса для Jitsi Meet не вказана або некоректна.
+        </div>
+
+        <p class="mt-4">Після завершення зустрічі, будь ласка, поверніться на цю сторінку.</p>
+
+        <a href="{% url 'home' %}" class="btn btn-home-custom mt-4">
+          <i class="fas fa-arrow-left"></i> На головну
+        </a>
+      </div>
+    </div>
+  </div>
 </div>
+
 <script>
   window.addEventListener('DOMContentLoaded', () => {
-    const opened = window.open('{{ meeting.jitsi_url }}', '_blank');
-    if (!opened) {
-      document.getElementById('jitsi-link').style.fontWeight = 'bold';
+    const jitsiUrl = '{{ meeting.jitsi_url|escapejs }}';
+    const jitsiLinkElement = document.getElementById('jitsi-link');
+    const manualOpenMessage = document.getElementById('manual-open-message');
+    const errorJitsiUrlMessage = document.getElementById('error-jitsi-url-message');
+    const redirectStatusContainer = document.getElementById('redirect-status');
+
+    if (!jitsiUrl || jitsiUrl.trim() === '' || !jitsiUrl.startsWith('http')) {
+      console.error("Jitsi URL порожнє або недійсне:", jitsiUrl);
+      if (redirectStatusContainer) redirectStatusContainer.style.display = 'none'; // Сховати початкове повідомлення
+      if (errorJitsiUrlMessage) errorJitsiUrlMessage.style.display = 'block'; // Показати помилку URL
+      if (jitsiLinkElement) jitsiLinkElement.classList.add('disabled'); // Вимкнути кнопку, якщо URL немає
+      return; // Зупинити виконання, якщо URL немає
     }
+
+    // Дамо невелику затримку перед спробою відкриття, іноді це допомагає обійти деякі блокери
+    setTimeout(() => {
+      try {
+        console.log("Спроба відкрити Jitsi URL:", jitsiUrl);
+        const openedWindow = window.open(jitsiUrl, '_blank');
+
+        // Перевірка, чи вдалося відкрити вікно.
+        // `openedWindow` може бути null, або `openedWindow.closed` може бути true,
+        // або `opener` може бути null, якщо вікно було заблоковано.
+        if (!openedWindow || openedWindow.closed || typeof openedWindow.closed === 'undefined' || openedWindow.opener === null) {
+          console.warn("Автоматичне відкриття Jitsi Meet, схоже, було заблоковано або не вдалося.");
+          if (manualOpenMessage) manualOpenMessage.style.display = 'block';
+          if (jitsiLinkElement) {
+            jitsiLinkElement.classList.remove('btn-primary');
+            jitsiLinkElement.classList.add('btn-warning'); // Змінити колір кнопки на попереджувальний
+            jitsiLinkElement.innerHTML = '<i class="fas fa-exclamation-circle"></i> Натисніть тут для Jitsi: ' + jitsiUrl.substring(0, 50) + (jitsiUrl.length > 50 ? '...' : '');
+          }
+        } else {
+            console.log("Jitsi Meet вікно успішно відкрито (або спроба зроблена).");
+            // Можна сховати повідомлення про ручне відкриття, якщо воно було показане раніше
+            // (хоча в цьому потоці воно не мало б показуватись, якщо все ок)
+            // if (manualOpenMessage) manualOpenMessage.style.display = 'none';
+        }
+      } catch (e) {
+        console.error("Помилка під час спроби відкрити Jitsi Meet:", e);
+        if (manualOpenMessage) manualOpenMessage.style.display = 'block';
+         if (jitsiLinkElement) {
+            jitsiLinkElement.classList.remove('btn-primary');
+            jitsiLinkElement.classList.add('btn-danger'); // Червоний колір при помилці
+            jitsiLinkElement.innerHTML = '<i class="fas fa-bug"></i> Помилка відкриття! Натисніть: ' + jitsiUrl.substring(0, 50) + (jitsiUrl.length > 50 ? '...' : '');
+          }
+      }
+    }, 500); // Затримка в 0.5 секунди
   });
 </script>
 {% endblock %}

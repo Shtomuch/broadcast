@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Нагадування про зустріч</title>
+</head>
+<body>
+    <p>Вітаємо, {{ organizer.username }}!</p> {# Змінено user на organizer #}
+    <p>Це нагадування про те, що ваша зустріч "<strong>{{ meeting.title }}</strong>" запланована на:</p>
+    <p><strong>{{ meeting.scheduled_time|date:"d E Y" }} о {{ meeting.scheduled_time|time:"H:i" }}</strong>
+       (приблизно через {{ minutes_until_meeting }} хвилин).</p>
+    {% if meeting.description %}
+    <p><strong>Опис:</strong> {{ meeting.description|linebreaksbr }}</p>
+    {% endif %}
+    <p>
+        Ви можете приєднатися до зустрічі за посиланням: <a href="{{ meeting.jitsi_url }}">{{ meeting.jitsi_url }}</a>
+    </p>
+    <p>З найкращими побажаннями,<br>Ваш Сервіс CorpComm</p>
+</body>
+</html>

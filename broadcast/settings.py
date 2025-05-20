@@ -27,6 +27,15 @@ DEBUG = True
 
 # settings.py
 
+LANGUAGE_CODE = 'uk'  # Встановлюємо українську мову як основну
+
+TIME_ZONE = 'Europe/Kyiv' # Ваш часовий пояс
+
+USE_I18N = True  # Вмикаємо інтернаціоналізацію
+
+USE_L10N = True  # Вмикаємо форматування дат, чисел відповідно до локалі
+
+USE_TZ = True    # Вмикаємо підтримку часових поясів
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
@@ -127,16 +136,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
-USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
@@ -171,3 +170,20 @@ from django.urls import reverse_lazy
 LOGIN_REDIRECT_URL = reverse_lazy('meetings:list')
 LOGOUT_REDIRECT_URL = reverse_lazy('users:login')
 LOGIN_URL = reverse_lazy('users:login')
+
+CELERY_BROKER_URL = 'redis://192.168.1.77:6379/0' # URL вашого Redis сервера
+CELERY_RESULT_BACKEND = 'redis://192.168.1.77:6379/0' # Для зберігання результатів завдань (опціонально)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Europe/Kiev' # Встановіть вашу часову зону
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60 # Таймаут завдання, наприклад 30 хвилин
+
+# Для Django Email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'maksym.putin.django@gmail.com'
+EMAIL_HOST_PASSWORD = 'lwoc lcnb cbxj iyof'
+EMAIL_USE_TLS = True
