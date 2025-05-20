@@ -1,0 +1,21 @@
+{% extends 'users/base.html' %}
+{% block title %}{{ meeting.title }} - Redirect{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <h3>{{ meeting.title }}</h3>
+  <p>Вы были переадресованы на сервис Jitsi Meet.</p>
+  <p>Если новая вкладка не открылась автоматически, перейдите по ссылке:
+    <a href="{{ meeting.jitsi_url }}" target="_blank" id="jitsi-link">{{ meeting.jitsi_url }}</a>
+  </p>
+  <p>После завершения встречи вернитесь на эту страницу.</p>
+  <a href="{% url 'home' %}" class="btn btn-primary mt-3">На главную</a>
+</div>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const opened = window.open('{{ meeting.jitsi_url }}', '_blank');
+    if (!opened) {
+      document.getElementById('jitsi-link').style.fontWeight = 'bold';
+    }
+  });
+</script>
+{% endblock %}

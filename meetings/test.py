@@ -39,3 +39,4 @@ class MeetingsTests(TestCase):
         j = self.client.get(reverse('meetings:join', kwargs={'slug': m.room_name}))
         self.assertEqual(j.status_code, 200)
         self.assertContains(j, m.title)
+        self.assertContains(j, m.jitsi_url)
